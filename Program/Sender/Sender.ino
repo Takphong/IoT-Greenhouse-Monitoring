@@ -5,8 +5,8 @@
 #include "mbedtls/sha256.h"
 
 // ================= WIFI =================
-const char* ssid = "Kitsune_Fox";
-const char* password = "WhiteFox13624";
+const char* ssid = "Nope";
+const char* password = "Nuh-Uh";
 
 // ================= MQTT =================
 const char* mqtt_server = "broker.emqx.io";
