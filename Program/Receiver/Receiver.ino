@@ -4,8 +4,8 @@
 #include <ArduinoJson.h>
 #include "mbedtls/sha256.h"
 
-const char* ssid = "Kitsune_Fox";
-const char* password = "WhiteFox13624";
+const char* ssid = "Nope";
+const char* password = "Nuh-uh";
 const char* mqtt_server = "192.168.1.100";
 
 const char* sub_topic = "greenhouse/fern/data";
