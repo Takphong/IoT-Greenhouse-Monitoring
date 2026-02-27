@@ -5,8 +5,8 @@
 #include "mbedtls/sha256.h"
 
 // ================= WIFI =================
-const char* ssid = "Nope";
-const char* password = "Nuh-Uh";
+const char* ssid = "「JAITP」";
+const char* password = "Nuh-uh";
 
 // ================= MQTT =================
 const char* mqtt_server = "broker.emqx.io";
@@ -30,7 +30,7 @@ float lightLevel;
 float tiltY;
 
 bool pumpState = false;
-bool manualOverride = false;   // 🔥 Added to fix WATER_OFF bug
+bool autoMode = true;   // 🔥 NEW: true = auto, false = manual
 
 unsigned long lastSend = 0;
 
@@ -63,11 +63,14 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   if (msg == "WATER_ON") {
     pumpState = true;
-    manualOverride = true;
+    autoMode = false;   // manual mode
   }
   else if (msg == "WATER_OFF") {
     pumpState = false;
-    manualOverride = true;
+    autoMode = false;   // manual mode
+  }
+  else if (msg == "AUTO") {
+    autoMode = true;    // back to auto mode
   }
 }
 
@@ -124,8 +127,8 @@ void readSensors() {
   M5.Imu.getGyroData(&gx, &gy, &gz);
   tiltY = gy;
 
-  // Auto watering ONLY if no manual override
-  if (!manualOverride) {
+  // Auto watering only if autoMode enabled
+  if (autoMode) {
     if (soilMoisture < 1500) {
       pumpState = true;
     } else {
