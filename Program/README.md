@@ -12,6 +12,6 @@
 
 ## file that ending with 2M5
 
-### Use for real test (When got 2 M5stack)
+### Use for real test (When got 2 M5stack)(Current Work - If you want to continue my work pls consider to use this part)
 
 My text aren't colored :(
