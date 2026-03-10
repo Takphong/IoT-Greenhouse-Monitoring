@@ -1,0 +1,427 @@
+[
+    {
+        "id": "a2e23742b5b2dca8",
+        "type": "tab",
+        "label": "Flow 6",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "e01f0453ebcd86cf",
+        "type": "mqtt in",
+        "z": "a2e23742b5b2dca8",
+        "name": "M5 Data",
+        "topic": "greenhouse/fern/data",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "mqtt_broker",
+        "nl": false,
+        "rap": false,
+        "inputs": 0,
+        "x": 300,
+        "y": 260,
+        "wires": [
+            [
+                "372cf3490b09c529"
+            ]
+        ]
+    },
+    {
+        "id": "372cf3490b09c529",
+        "type": "json",
+        "z": "a2e23742b5b2dca8",
+        "name": "Parse JSON",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 480,
+        "y": 260,
+        "wires": [
+            [
+                "b731774e9feadbd5",
+                "2095a67433297b8e"
+            ]
+        ]
+    },
+    {
+        "id": "b731774e9feadbd5",
+        "type": "function",
+        "z": "a2e23742b5b2dca8",
+        "name": "Split Sensor",
+        "func": "let d = msg.payload.data;\n\nif(!d) return null;\n\nreturn [\n    {payload: Number(d.soil)},\n    {payload: Number(d.light)},\n    {payload: Number(d.gyroX)},   // Roll\n    {payload: Number(d.gyroY)},   // Pitch\n    {payload: Number(d.gyroZ)},   // Yaw\n    {payload: Number(d.soil)},    // Soil Chart\n    {payload: Number(d.light)}    // Light Chart\n];",
+        "outputs": 7,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 660,
+        "y": 260,
+        "wires": [
+            [
+                "b922626830b600d4",
+                "ac1a3eb4185e10e6"
+            ],
+            [
+                "0441850dec88424f"
+            ],
+            [
+                "388570daaeb6efd8"
+            ],
+            [
+                "a561ae3eba50977a"
+            ],
+            [
+                "baafd5e04254d6a3"
+            ],
+            [
+                "f13d5aebab6eb76c",
+                "61d14ee8a51e4276"
+            ],
+            [
+                "abb7946a8d3fc274"
+            ]
+        ]
+    },
+    {
+        "id": "b922626830b600d4",
+        "type": "ui_gauge",
+        "z": "a2e23742b5b2dca8",
+        "name": "Soil",
+        "group": "group1",
+        "width": "",
+        "height": "",
+        "gtype": "gage",
+        "title": "Soil Moisture",
+        "label": "%",
+        "format": "",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "diff": false,
+        "className": "",
+        "x": 900,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "0441850dec88424f",
+        "type": "ui_gauge",
+        "z": "a2e23742b5b2dca8",
+        "name": "Light",
+        "group": "group1",
+        "width": "",
+        "height": "",
+        "gtype": "gage",
+        "title": "Light",
+        "label": "lux",
+        "format": "",
+        "min": "0",
+        "max": "500",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "diff": false,
+        "className": "",
+        "x": 900,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "388570daaeb6efd8",
+        "type": "ui_gauge",
+        "z": "a2e23742b5b2dca8",
+        "name": "Roll",
+        "group": "group1",
+        "width": "",
+        "height": "",
+        "gtype": "gage",
+        "title": "Roll",
+        "label": "°",
+        "format": "",
+        "min": "-10",
+        "max": "10",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "diff": false,
+        "className": "",
+        "x": 900,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "a561ae3eba50977a",
+        "type": "ui_gauge",
+        "z": "a2e23742b5b2dca8",
+        "name": "Pitch",
+        "group": "group1",
+        "width": "",
+        "height": "",
+        "gtype": "gage",
+        "title": "Pitch",
+        "label": "°",
+        "format": "",
+        "min": "-10",
+        "max": "10",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "diff": false,
+        "className": "",
+        "x": 900,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "baafd5e04254d6a3",
+        "type": "ui_gauge",
+        "z": "a2e23742b5b2dca8",
+        "name": "Yaw",
+        "group": "group1",
+        "width": "",
+        "height": "",
+        "gtype": "gage",
+        "title": "Yaw",
+        "label": "°",
+        "format": "",
+        "min": "-180",
+        "max": "180",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "diff": false,
+        "className": "",
+        "x": 900,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "f13d5aebab6eb76c",
+        "type": "ui_chart",
+        "z": "a2e23742b5b2dca8",
+        "name": "Soil Chart",
+        "group": "group1",
+        "width": "",
+        "height": "",
+        "label": "Soil Graph",
+        "chartType": "line",
+        "xformat": "HH:mm:ss",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "5",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": "",
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 900,
+        "y": 340,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "abb7946a8d3fc274",
+        "type": "ui_chart",
+        "z": "a2e23742b5b2dca8",
+        "name": "Light Chart",
+        "group": "group1",
+        "width": "",
+        "height": "",
+        "label": "Light Graph",
+        "chartType": "line",
+        "xformat": "HH:mm:ss",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "5",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": "",
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 910,
+        "y": 380,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "723d687c73405eca",
+        "type": "ui_button",
+        "z": "a2e23742b5b2dca8",
+        "name": "Water ON",
+        "group": "group1",
+        "label": "Water ON",
+        "payload": "ON",
+        "x": 380,
+        "y": 420,
+        "wires": [
+            [
+                "b06baae12bb11cc6"
+            ]
+        ]
+    },
+    {
+        "id": "bd85220d5802feab",
+        "type": "ui_button",
+        "z": "a2e23742b5b2dca8",
+        "name": "Water OFF",
+        "group": "group1",
+        "label": "Water OFF",
+        "payload": "OFF",
+        "x": 380,
+        "y": 460,
+        "wires": [
+            [
+                "b06baae12bb11cc6"
+            ]
+        ]
+    },
+    {
+        "id": "b06baae12bb11cc6",
+        "type": "mqtt out",
+        "z": "a2e23742b5b2dca8",
+        "name": "Send Command",
+        "topic": "greenhouse/fern/cmd",
+        "broker": "mqtt_broker",
+        "x": 640,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "2095a67433297b8e",
+        "type": "debug",
+        "z": "a2e23742b5b2dca8",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload.data",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 500,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "ac1a3eb4185e10e6",
+        "type": "debug",
+        "z": "a2e23742b5b2dca8",
+        "name": "debug 3",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 800,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "61d14ee8a51e4276",
+        "type": "debug",
+        "z": "a2e23742b5b2dca8",
+        "name": "debug 4",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 860,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "mqtt_broker",
+        "type": "mqtt-broker",
+        "name": "MQTT",
+        "broker": "192.168.1.45",
+        "port": "1883"
+    },
+    {
+        "id": "group1",
+        "type": "ui_group",
+        "name": "Environment",
+        "tab": "tab1",
+        "order": 1,
+        "width": "6"
+    },
+    {
+        "id": "tab1",
+        "type": "ui_tab",
+        "name": "M5Stack Monitor",
+        "icon": "dashboard"
+    },
+    {
+        "id": "4f4d65394f7adf83",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-dashboard": "3.6.6"
+        }
+    }
+]
