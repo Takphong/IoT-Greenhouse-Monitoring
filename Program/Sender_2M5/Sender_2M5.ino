@@ -5,11 +5,11 @@
 #include "mbedtls/sha256.h"
 
 // ================= WIFI =================
-const char* ssid = "「JAITP」";
-const char* password = "MTFKISAS";
+const char* ssid = "name wifi";
+const char* password = "pass";
 
 // ================= MQTT =================
-const char* mqtt_server = "broker.emqx.io";
+const char* mqtt_server = "broker.emqx.io"; //Change this if use Mosquitto server
 const int   mqtt_port   = 1883;
 
 const char* pub_topic = "greenhouse/fern/data";
@@ -25,7 +25,6 @@ PubSubClient client(espClient);
 
 // ================= VARIABLES =================
 float soilMoisture;
-float temperature;
 float lightLevel;
 
 float gyroX;
@@ -130,7 +129,6 @@ void readSensors() {
 
   soilMoisture = analogRead(SOIL_PIN);
   lightLevel   = analogRead(LIGHT_PIN);
-  temperature  = random(250, 350) / 10.0;
 
   float gx, gy, gz;
   M5.Imu.getGyroData(&gx, &gy, &gz);
@@ -154,10 +152,9 @@ void sendData() {
   JsonObject data = finalDoc.createNestedObject("data");
 
   data["soil"]  = soilMoisture;
-  data["temp"]  = temperature;
   data["light"] = lightLevel;
 
-  // 🔥 Send full gyro values
+  //Gyro Sender
   data["gyroX"] = gyroX;
   data["gyroY"] = gyroY;
   data["gyroZ"] = gyroZ;
