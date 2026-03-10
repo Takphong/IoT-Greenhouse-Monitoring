@@ -6,7 +6,7 @@
 // ================= WIFI =================
 const char* ssid = "name";
 const char* password = "pass";
-const char* mqtt_server = "broker.emqx.io"; //Change this if use Mosquitto server
+const char* mqtt_server = "192.168.1.45"; //Change this if use Mosquitto server
 
 const char* data_topic = "greenhouse/fern/data";
 const char* control_topic = "greenhouse/fern/control";
@@ -79,14 +79,14 @@ void callback(char* topic, byte* payload, unsigned int length) {
     soil   = data["soil"]  | soil;
     lightL = data["light"] | lightL;
 
-    //gyro
+    // 🔥 THIS IS THE IMPORTANT PART
     roll  = data["gyroX"] | 0.0;
     pitch = data["gyroY"] | 0.0;
     yaw   = data["gyroZ"] | 0.0;
 
     pump = data["pump"] | pump;
 
-    //this also gyro but me printing
+    // 🔎 DEBUG (optional but useful)
     Serial.println("---- RECEIVED GYRO ----");
     Serial.print("X: "); Serial.println(roll);
     Serial.print("Y: "); Serial.println(pitch);
@@ -191,28 +191,44 @@ void loop() {
   M5.update();
 
   // ===== Swipe detection =====
-  auto t = M5.Touch.getDetail();
+// ===== Improved Touch Detection =====
+auto t = M5.Touch.getDetail();
 
-  if (t.isPressed() && !touching) {
-    touchStartX = t.x;
-    touching = true;
+if (t.isPressed() && !touching) {
+  touchStartX = t.x;
+  touching = true;
+}
+
+if (!t.isPressed() && touching) {
+
+  int diff = t.x - touchStartX;
+
+  // ---- Swipe Right ----
+  if (diff > 40) {
+    screenMode++;
+    if (screenMode > 2) screenMode = 0;
   }
 
-  if (!t.isPressed() && touching) {
-
-    int diff = t.x - touchStartX;
-
-    if (diff > 80) {
-      screenMode++;
-      if (screenMode > 2) screenMode = 0;
-    }
-    else if (diff < -80) {
-      screenMode--;
-      if (screenMode < 0) screenMode = 2;
-    }
-
-    touching = false;
+  // ---- Swipe Left ----
+  else if (diff < -40) {
+    screenMode--;
+    if (screenMode < 0) screenMode = 2;
   }
+
+  // ---- Tap Right Side (Next Page) ----
+  else if (touchStartX > 160) {
+    screenMode++;
+    if (screenMode > 2) screenMode = 0;
+  }
+
+  // ---- Tap Left Side (Previous Page) ----
+  else if (touchStartX < 160) {
+    screenMode--;
+    if (screenMode < 0) screenMode = 2;
+  }
+
+  touching = false;
+}
 
   // MQTT
   if (WiFi.status() != WL_CONNECTED)
