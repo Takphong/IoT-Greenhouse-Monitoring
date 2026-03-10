@@ -5,11 +5,11 @@
 #include "mbedtls/sha256.h"
 
 // ================= WIFI =================
-const char* ssid = "name wifi";
+const char* ssid = "name";
 const char* password = "pass";
 
 // ================= MQTT =================
-const char* mqtt_server = "broker.emqx.io"; //Change this if use Mosquitto server
+const char* mqtt_server = "192.168.1.45"; //Change this if use Mosquitto server
 const int   mqtt_port   = 1883;
 
 const char* pub_topic = "greenhouse/fern/data";
@@ -127,7 +127,10 @@ void reconnectMQTT() {
 // ================= READ SENSORS =================
 void readSensors() {
 
-  soilMoisture = analogRead(SOIL_PIN);
+  int rawSoil = analogRead(SOIL_PIN);
+  soilMoisture = map(rawSoil, 3500, 1200, 0, 100);
+  soilMoisture = constrain(soilMoisture, 0, 100);
+  
   lightLevel   = analogRead(LIGHT_PIN);
 
   float gx, gy, gz;
@@ -154,7 +157,7 @@ void sendData() {
   data["soil"]  = soilMoisture;
   data["light"] = lightLevel;
 
-  //Gyro Sender
+  // 🔥 Send full gyro values
   data["gyroX"] = gyroX;
   data["gyroY"] = gyroY;
   data["gyroZ"] = gyroZ;
