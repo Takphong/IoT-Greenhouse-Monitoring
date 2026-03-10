@@ -4,9 +4,9 @@
 #include <ArduinoJson.h>
 
 // ================= WIFI =================
-const char* ssid = "「JAITP」";
-const char* password = "MTFKISAS";
-const char* mqtt_server = "broker.emqx.io";
+const char* ssid = "name";
+const char* password = "pass";
+const char* mqtt_server = "broker.emqx.io"; //Change this if use Mosquitto server
 
 const char* data_topic = "greenhouse/fern/data";
 const char* control_topic = "greenhouse/fern/control";
@@ -16,7 +16,6 @@ PubSubClient client(espClient);
 
 // ===== Data From Sender =====
 float soil = 0;
-float temp = 0;
 float lightL = 0;
 float roll = 0;
 float pitch = 0;
@@ -78,17 +77,16 @@ void callback(char* topic, byte* payload, unsigned int length) {
     JsonObject data = doc["data"];
 
     soil   = data["soil"]  | soil;
-    temp   = data["temp"]  | temp;
     lightL = data["light"] | lightL;
 
-    // 🔥 THIS IS THE IMPORTANT PART
+    //gyro
     roll  = data["gyroX"] | 0.0;
     pitch = data["gyroY"] | 0.0;
     yaw   = data["gyroZ"] | 0.0;
 
     pump = data["pump"] | pump;
 
-    // 🔎 DEBUG (optional but useful)
+    //this also gyro but me printing
     Serial.println("---- RECEIVED GYRO ----");
     Serial.print("X: "); Serial.println(roll);
     Serial.print("Y: "); Serial.println(pitch);
@@ -127,7 +125,7 @@ void displayScreen() {
   M5.Lcd.println("WiFi");
 
   // Mode
-  M5.Lcd.setCursor(10, 40);
+  M5.Lcd.setCursor(10, 30);
   if (systemMode == "AUTO")
     M5.Lcd.setTextColor(GREEN);
   else if (systemMode == "MANUAL ON")
@@ -135,27 +133,42 @@ void displayScreen() {
   else
     M5.Lcd.setTextColor(RED);
 
-  M5.Lcd.printf("Mode: %s\n", systemMode.c_str());
+  M5.Lcd.printf("Mode: %s\n\n", systemMode.c_str());
 
   M5.Lcd.setTextColor(WHITE);
-  M5.Lcd.setCursor(10, 80);
+  M5.Lcd.println("--------------------------\n");
+  M5.Lcd.setCursor(10, 100);
 
   if (screenMode == 0) {
-    M5.Lcd.println("PAGE 1");
+    M5.Lcd.setTextColor(RED);
+    M5.Lcd.println("PAGE 1\n");
+    M5.Lcd.setTextColor(WHITE);
+    M5.Lcd.println("--------------------------\n");
+    M5.Lcd.setTextColor(GREENYELLOW);
     M5.Lcd.printf("Soil: %.0f %%\n", soil);
-    M5.Lcd.printf("Temp: %.1f C\n", temp);
   }
 
   else if (screenMode == 1) {
-    M5.Lcd.println("PAGE 2");
+    M5.Lcd.setTextColor(ORANGE);
+    M5.Lcd.println("PAGE 2\n");
+    M5.Lcd.setTextColor(WHITE);
+    M5.Lcd.println("--------------------------\n");
+    M5.Lcd.setTextColor(DARKCYAN);
     M5.Lcd.printf("Roll: %.1f\n", roll);
+    M5.Lcd.setTextColor(OLIVE);
     M5.Lcd.printf("Pitch: %.1f\n", pitch);
+    M5.Lcd.setTextColor(PURPLE);
     M5.Lcd.printf("Yaw: %.1f\n", yaw);
   }
 
   else if (screenMode == 2) {
-    M5.Lcd.println("PAGE 3");
+    M5.Lcd.setTextColor(YELLOW);
+    M5.Lcd.println("PAGE 3\n");
+    M5.Lcd.setTextColor(WHITE);
+    M5.Lcd.println("--------------------------\n");
+    M5.Lcd.setTextColor(LIGHTGREY);
     M5.Lcd.printf("Light: %.0f\n", lightL);
+    M5.Lcd.setTextColor(CYAN);
     M5.Lcd.printf("Pump: %s\n", pump ? "ON" : "OFF");
   }
 }
@@ -216,5 +229,5 @@ void loop() {
   }
 
   displayScreen();
-  delay(150);
+  delay(200);
 }
