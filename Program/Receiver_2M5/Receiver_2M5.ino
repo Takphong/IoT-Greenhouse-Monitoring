@@ -4,9 +4,9 @@
 #include <ArduinoJson.h>
 
 // ================= WIFI =================
-const char* ssid = "name";
-const char* password = "pass";
-const char* mqtt_server = "192.168.1.45"; //Change this if use Mosquitto server
+const char* ssid = "Name";
+const char* password = "Pass";
+const char* mqtt_server = "172.20.10.2";
 
 const char* data_topic = "greenhouse/fern/data";
 const char* control_topic = "greenhouse/fern/control";
@@ -17,10 +17,12 @@ PubSubClient client(espClient);
 // ===== Data From Sender =====
 float soil = 0;
 float lightL = 0;
+bool pump = false;
+
+// ===== IMU (FROM CORES3) =====
 float roll = 0;
 float pitch = 0;
 float yaw = 0;
-bool pump = false;
 
 String systemMode = "AUTO";
 int screenMode = 0;
@@ -57,7 +59,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     return;
   }
 
-  // ===== SENSOR DATA =====
+  // ===== SENSOR DATA FROM ESP32 =====
   if (topicStr == data_topic) {
 
     StaticJsonDocument<512> doc;
@@ -76,21 +78,15 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
     JsonObject data = doc["data"];
 
+    // Values from ESP32
     soil   = data["soil"]  | soil;
     lightL = data["light"] | lightL;
+    pump   = data["pump"]  | pump;
 
-    // 🔥 THIS IS THE IMPORTANT PART
-    roll  = data["gyroX"] | 0.0;
-    pitch = data["gyroY"] | 0.0;
-    yaw   = data["gyroZ"] | 0.0;
-
-    pump = data["pump"] | pump;
-
-    // 🔎 DEBUG (optional but useful)
-    Serial.println("---- RECEIVED GYRO ----");
-    Serial.print("X: "); Serial.println(roll);
-    Serial.print("Y: "); Serial.println(pitch);
-    Serial.print("Z: "); Serial.println(yaw);
+    Serial.println("---- RECEIVED FROM ESP32 ----");
+    Serial.print("Soil: "); Serial.println(soil);
+    Serial.print("Light: "); Serial.println(lightL);
+    Serial.print("Pump: "); Serial.println(pump);
   }
 }
 
@@ -107,6 +103,20 @@ void reconnectMQTT() {
     client.subscribe(data_topic);
     client.subscribe(control_topic);
   }
+}
+
+// ================= IMU UPDATE =================
+void updateIMU() {
+
+  float ax, ay, az;
+  float gx, gy, gz;
+
+  M5.Imu.getAccelData(&ax, &ay, &az);
+  M5.Imu.getGyroData(&gx, &gy, &gz);
+
+  roll  = atan2(ay, az) * 57.3;
+  pitch = atan2(-ax, sqrt(ay * ay + az * az)) * 57.3;
+  yaw   = gz;
 }
 
 // ================= DISPLAY =================
@@ -139,35 +149,50 @@ void displayScreen() {
   M5.Lcd.println("--------------------------\n");
   M5.Lcd.setCursor(10, 100);
 
+  // ===== PAGE 1 (ESP32 DATA) =====
   if (screenMode == 0) {
+
     M5.Lcd.setTextColor(RED);
     M5.Lcd.println("PAGE 1\n");
+
     M5.Lcd.setTextColor(WHITE);
     M5.Lcd.println("--------------------------\n");
+
     M5.Lcd.setTextColor(GREENYELLOW);
     M5.Lcd.printf("Soil: %.0f %%\n", soil);
+
+    M5.Lcd.setTextColor(CYAN);
+    M5.Lcd.printf("Light: %.0f\n", lightL);
   }
 
+  // ===== PAGE 2 (IMU FROM CORES3) =====
   else if (screenMode == 1) {
+
     M5.Lcd.setTextColor(ORANGE);
     M5.Lcd.println("PAGE 2\n");
+
     M5.Lcd.setTextColor(WHITE);
     M5.Lcd.println("--------------------------\n");
+
     M5.Lcd.setTextColor(DARKCYAN);
     M5.Lcd.printf("Roll: %.1f\n", roll);
+
     M5.Lcd.setTextColor(OLIVE);
     M5.Lcd.printf("Pitch: %.1f\n", pitch);
+
     M5.Lcd.setTextColor(PURPLE);
     M5.Lcd.printf("Yaw: %.1f\n", yaw);
   }
 
+  // ===== PAGE 3 (PUMP STATUS) =====
   else if (screenMode == 2) {
+
     M5.Lcd.setTextColor(YELLOW);
     M5.Lcd.println("PAGE 3\n");
+
     M5.Lcd.setTextColor(WHITE);
     M5.Lcd.println("--------------------------\n");
-    M5.Lcd.setTextColor(LIGHTGREY);
-    M5.Lcd.printf("Light: %.0f\n", lightL);
+
     M5.Lcd.setTextColor(CYAN);
     M5.Lcd.printf("Pump: %s\n", pump ? "ON" : "OFF");
   }
@@ -190,45 +215,42 @@ void loop() {
 
   M5.update();
 
-  // ===== Swipe detection =====
-// ===== Improved Touch Detection =====
-auto t = M5.Touch.getDetail();
+  updateIMU();
 
-if (t.isPressed() && !touching) {
-  touchStartX = t.x;
-  touching = true;
-}
+  // ===== Touch Page Control =====
+  auto t = M5.Touch.getDetail();
 
-if (!t.isPressed() && touching) {
-
-  int diff = t.x - touchStartX;
-
-  // ---- Swipe Right ----
-  if (diff > 40) {
-    screenMode++;
-    if (screenMode > 2) screenMode = 0;
+  if (t.isPressed() && !touching) {
+    touchStartX = t.x;
+    touching = true;
   }
 
-  // ---- Swipe Left ----
-  else if (diff < -40) {
-    screenMode--;
-    if (screenMode < 0) screenMode = 2;
-  }
+  if (!t.isPressed() && touching) {
 
-  // ---- Tap Right Side (Next Page) ----
-  else if (touchStartX > 160) {
-    screenMode++;
-    if (screenMode > 2) screenMode = 0;
-  }
+    int diff = t.x - touchStartX;
 
-  // ---- Tap Left Side (Previous Page) ----
-  else if (touchStartX < 160) {
-    screenMode--;
-    if (screenMode < 0) screenMode = 2;
-  }
+    if (diff > 40) {
+      screenMode++;
+      if (screenMode > 2) screenMode = 0;
+    }
 
-  touching = false;
-}
+    else if (diff < -40) {
+      screenMode--;
+      if (screenMode < 0) screenMode = 2;
+    }
+
+    else if (touchStartX > 160) {
+      screenMode++;
+      if (screenMode > 2) screenMode = 0;
+    }
+
+    else if (touchStartX < 160) {
+      screenMode--;
+      if (screenMode < 0) screenMode = 2;
+    }
+
+    touching = false;
+  }
 
   // MQTT
   if (WiFi.status() != WL_CONNECTED)
