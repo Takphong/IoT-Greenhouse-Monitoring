@@ -4,9 +4,9 @@
 #include <ArduinoJson.h>
 
 // ================= WIFI =================
-const char* ssid = "Name";
-const char* password = "Pass";
-const char* mqtt_server = "172.20.10.2";
+const char* ssid = "「JAITP」";
+const char* password = "MTFKISAS";
+const char* mqtt_server = "broker.emqx.io";
 
 const char* data_topic = "greenhouse/fern/data";
 const char* control_topic = "greenhouse/fern/control";
@@ -15,8 +15,9 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 
 // ===== Data From Sender =====
-float soil = 0;
-float lightL = 0;
+float temperature = 0;
+float humidity = 0;
+bool flame = false;
 bool pump = false;
 
 // ===== IMU (FROM CORES3) =====
@@ -79,13 +80,15 @@ void callback(char* topic, byte* payload, unsigned int length) {
     JsonObject data = doc["data"];
 
     // Values from ESP32
-    soil   = data["soil"]  | soil;
-    lightL = data["light"] | lightL;
-    pump   = data["pump"]  | pump;
+    temperature = data["temp"] | temperature;
+    humidity    = data["humidity"] | humidity;
+    flame       = data["flame"] | flame;
+    pump        = data["led"] | pump;
 
     Serial.println("---- RECEIVED FROM ESP32 ----");
-    Serial.print("Soil: "); Serial.println(soil);
-    Serial.print("Light: "); Serial.println(lightL);
+    Serial.print("Temperature: "); Serial.println(temperature);
+    Serial.print("Humidity: "); Serial.println(humidity);
+    Serial.print("Flame: "); Serial.println(flame);
     Serial.print("Pump: "); Serial.println(pump);
   }
 }
@@ -149,21 +152,24 @@ void displayScreen() {
   M5.Lcd.println("--------------------------\n");
   M5.Lcd.setCursor(10, 100);
 
-  // ===== PAGE 1 (ESP32 DATA) =====
+// ===== PAGE 1 (ESP32 DATA) =====
   if (screenMode == 0) {
 
-    M5.Lcd.setTextColor(RED);
-    M5.Lcd.println("PAGE 1\n");
+   M5.Lcd.setTextColor(RED);
+   M5.Lcd.println("PAGE 1\n");
 
-    M5.Lcd.setTextColor(WHITE);
-    M5.Lcd.println("--------------------------\n");
+   M5.Lcd.setTextColor(WHITE);
+   M5.Lcd.println("--------------------------\n");
 
-    M5.Lcd.setTextColor(GREENYELLOW);
-    M5.Lcd.printf("Soil: %.0f %%\n", soil);
+   M5.Lcd.setTextColor(GREENYELLOW);
+   M5.Lcd.printf("Temperature: %.1f C\n", temperature);
 
-    M5.Lcd.setTextColor(CYAN);
-    M5.Lcd.printf("Light: %.0f\n", lightL);
-  }
+   M5.Lcd.setTextColor(CYAN);
+   M5.Lcd.printf("Humidity: %.1f %%\n", humidity);
+
+   M5.Lcd.setTextColor(ORANGE);
+   M5.Lcd.printf("Flame: %s\n", flame ? "YES" : "NO");
+}
 
   // ===== PAGE 2 (IMU FROM CORES3) =====
   else if (screenMode == 1) {
