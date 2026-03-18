@@ -5,8 +5,8 @@
 #include "DHT.h"
 
 // WIFI
-const char* ssid = "「JAITP」";
-const char* password = "MTFKISAS";
+const char* ssid = "Name";
+const char* password = "Pass";
 
 // MQTT
 const char* mqtt_server = "172.20.10.2";
