@@ -4,12 +4,13 @@
 #include <ArduinoJson.h>
 
 // ================= WIFI =================
-const char* ssid = "「JAITP」";
-const char* password = "MTFKISAS";
+const char* ssid = "Redmi 15 5G";
+const char* password = "ROME2011";
 const char* mqtt_server = "broker.emqx.io";
 
 const char* data_topic = "greenhouse/fern/data";
 const char* control_topic = "greenhouse/fern/control";
+const char* mode_topic = "greenhouse/fern/mode";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -20,17 +21,18 @@ float humidity = 0;
 bool flame = false;
 bool pump = false;
 
-// ===== IMU (FROM CORES3) =====
+// ===== IMU =====
 float roll = 0;
 float pitch = 0;
 float yaw = 0;
 
+// ✅ CLEAN MODE
 String systemMode = "AUTO";
-int screenMode = 0;
 
+int screenMode = 0;
 unsigned long lastReconnectAttempt = 0;
 
-// ===== Swipe detection =====
+// ===== Swipe =====
 int touchStartX = 0;
 bool touching = false;
 
@@ -43,24 +45,31 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   String topicStr = String(topic);
 
-  // ===== CONTROL =====
-  if (topicStr == control_topic) {
+  // ===== MODE SYNC (ONLY SOURCE OF TRUTH) =====
+  if (topicStr == mode_topic) {
 
-    if (msg == "WATER_ON") {
-      systemMode = "MANUAL ON";
-      pump = true;
-    }
-    else if (msg == "WATER_OFF") {
-      systemMode = "MANUAL OFF";
-      pump = false;
-    }
-    else if (msg == "AUTO") {
-      systemMode = "AUTO";
-    }
+    systemMode = msg;
+
+    Serial.println("---- MODE SYNC ----");
+    Serial.print("Mode: "); Serial.println(systemMode);
+
     return;
   }
 
-  // ===== SENSOR DATA FROM ESP32 =====
+  // ===== CONTROL =====
+  if (topicStr == control_topic) {
+
+    if (msg == "AUTO") {
+      systemMode = "AUTO";
+    }
+    else if (msg == "WATER_ON" || msg == "WATER_OFF") {
+      systemMode = "MANUAL";
+    }
+
+    return;
+  }
+
+  // ===== SENSOR DATA =====
   if (topicStr == data_topic) {
 
     StaticJsonDocument<512> doc;
@@ -79,16 +88,13 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
     JsonObject data = doc["data"];
 
-    // Values from ESP32
     temperature = data["temp"] | temperature;
     humidity    = data["humidity"] | humidity;
     flame       = data["flame"] | flame;
     pump        = data["led"] | pump;
 
     Serial.println("---- RECEIVED FROM ESP32 ----");
-    Serial.print("Temperature: "); Serial.println(temperature);
-    Serial.print("Humidity: "); Serial.println(humidity);
-    Serial.print("Flame: "); Serial.println(flame);
+    Serial.print("Mode: "); Serial.println(systemMode);
     Serial.print("Pump: "); Serial.println(pump);
   }
 }
@@ -100,15 +106,16 @@ void connectWiFi() {
     delay(500);
 }
 
-// ================= MQTT RECONNECT =================
+// ================= MQTT =================
 void reconnectMQTT() {
   if (client.connect("FernMonitor")) {
     client.subscribe(data_topic);
     client.subscribe(control_topic);
+    client.subscribe(mode_topic);
   }
 }
 
-// ================= IMU UPDATE =================
+// ================= IMU =================
 void updateIMU() {
 
   float ax, ay, az;
@@ -129,22 +136,17 @@ void displayScreen() {
   M5.Lcd.setTextSize(2);
   M5.Lcd.setCursor(10, 10);
 
-  // WiFi status
-  if (WiFi.status() == WL_CONNECTED)
-    M5.Lcd.setTextColor(GREEN);
-  else
-    M5.Lcd.setTextColor(RED);
-
+  // WiFi
+  M5.Lcd.setTextColor(WiFi.status() == WL_CONNECTED ? GREEN : RED);
   M5.Lcd.println("WiFi");
 
-  // Mode
+  // ===== MODE (CLEAN) =====
   M5.Lcd.setCursor(10, 30);
+
   if (systemMode == "AUTO")
     M5.Lcd.setTextColor(GREEN);
-  else if (systemMode == "MANUAL ON")
-    M5.Lcd.setTextColor(BLUE);
   else
-    M5.Lcd.setTextColor(RED);
+    M5.Lcd.setTextColor(BLUE);
 
   M5.Lcd.printf("Mode: %s\n\n", systemMode.c_str());
 
@@ -152,26 +154,26 @@ void displayScreen() {
   M5.Lcd.println("--------------------------\n");
   M5.Lcd.setCursor(10, 100);
 
-// ===== PAGE 1 (ESP32 DATA) =====
+  // ===== PAGE 1 =====
   if (screenMode == 0) {
 
-   M5.Lcd.setTextColor(RED);
-   M5.Lcd.println("PAGE 1\n");
+    M5.Lcd.setTextColor(RED);
+    M5.Lcd.println("PAGE 1\n");
 
-   M5.Lcd.setTextColor(WHITE);
-   M5.Lcd.println("--------------------------\n");
+    M5.Lcd.setTextColor(WHITE);
+    M5.Lcd.println("--------------------------\n");
 
-   M5.Lcd.setTextColor(GREENYELLOW);
-   M5.Lcd.printf("Temperature: %.1f C\n", temperature);
+    M5.Lcd.setTextColor(GREENYELLOW);
+    M5.Lcd.printf("Temperature: %.1f C\n", temperature);
 
-   M5.Lcd.setTextColor(CYAN);
-   M5.Lcd.printf("Humidity: %.1f %%\n", humidity);
+    M5.Lcd.setTextColor(CYAN);
+    M5.Lcd.printf("Humidity: %.1f %%\n", humidity);
 
-   M5.Lcd.setTextColor(ORANGE);
-   M5.Lcd.printf("Flame: %s\n", flame ? "YES" : "NO");
-}
+    M5.Lcd.setTextColor(ORANGE);
+    M5.Lcd.printf("Flame Detected: %s\n", flame ? "YES" : "NO");
+  }
 
-  // ===== PAGE 2 (IMU FROM CORES3) =====
+  // ===== PAGE 2 =====
   else if (screenMode == 1) {
 
     M5.Lcd.setTextColor(ORANGE);
@@ -190,7 +192,7 @@ void displayScreen() {
     M5.Lcd.printf("Yaw: %.1f\n", yaw);
   }
 
-  // ===== PAGE 3 (PUMP STATUS) =====
+  // ===== PAGE 3 =====
   else if (screenMode == 2) {
 
     M5.Lcd.setTextColor(YELLOW);
@@ -220,10 +222,9 @@ void setup() {
 void loop() {
 
   M5.update();
-
   updateIMU();
 
-  // ===== Touch Page Control =====
+  // ===== TOUCH =====
   auto t = M5.Touch.getDetail();
 
   if (t.isPressed() && !touching) {
@@ -235,25 +236,13 @@ void loop() {
 
     int diff = t.x - touchStartX;
 
-    if (diff > 40) {
-      screenMode++;
-      if (screenMode > 2) screenMode = 0;
-    }
+    if (diff > 40) screenMode++;
+    else if (diff < -40) screenMode--;
+    else if (touchStartX > 160) screenMode++;
+    else screenMode--;
 
-    else if (diff < -40) {
-      screenMode--;
-      if (screenMode < 0) screenMode = 2;
-    }
-
-    else if (touchStartX > 160) {
-      screenMode++;
-      if (screenMode > 2) screenMode = 0;
-    }
-
-    else if (touchStartX < 160) {
-      screenMode--;
-      if (screenMode < 0) screenMode = 2;
-    }
+    if (screenMode > 2) screenMode = 0;
+    if (screenMode < 0) screenMode = 2;
 
     touching = false;
   }
