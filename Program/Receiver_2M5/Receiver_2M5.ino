@@ -2,7 +2,6 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
-#include "mbedtls/sha256.h"
 
 // ===========For CheckSum int=============
 uint16_t generateChecksum(String data) {
