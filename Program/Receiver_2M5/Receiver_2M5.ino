@@ -2,6 +2,18 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
+#include "mbedtls/sha256.h"
+
+// ===========For CheckSum int=============
+uint16_t generateChecksum(String data) {
+  uint16_t sum = 0;
+
+  for (int i = 0; i < data.length(); i++) {
+    sum += (uint8_t)data[i];
+  }
+
+  return sum;
+}
 
 // ================= WIFI =================
 const char* ssid = "Redmi 15 5G";
@@ -72,7 +84,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   // ===== SENSOR DATA =====
   if (topicStr == data_topic) {
 
-    StaticJsonDocument<512> doc;
+    StaticJsonDocument<768> doc;
 
     DeserializationError error = deserializeJson(doc, msg);
     if (error) {
@@ -84,6 +96,33 @@ void callback(char* topic, byte* payload, unsigned int length) {
     if (!doc.containsKey("data")) {
       Serial.println("No data object!");
       return;
+    }
+
+    // ===== CHECKSUM VERIFY =====
+    if (!doc.containsKey("checksum")) {
+      Serial.println("No checksum!");
+     return;
+    }
+
+    uint16_t receivedChecksum = doc["checksum"];
+
+    String dataStr;
+    serializeJson(doc["data"], dataStr);
+
+    uint16_t calculatedChecksum = generateChecksum(dataStr);
+
+    if (receivedChecksum != calculatedChecksum) {
+      Serial.println("❌ CHECKSUM FAILED!");
+
+     Serial.print("Received: ");
+     Serial.println(receivedChecksum);
+
+     Serial.print("Calculated: ");
+     Serial.println(calculatedChecksum);
+
+     return;
+    } else {
+     Serial.println("✅ CHECKSUM OK");
     }
 
     JsonObject data = doc["data"];
