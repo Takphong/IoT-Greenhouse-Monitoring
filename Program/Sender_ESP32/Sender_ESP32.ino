@@ -1,3 +1,6 @@
+//const char* ssid = "「JAITP」";
+//const char* password = "MTFKISAS";
+
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
@@ -5,8 +8,8 @@
 #include "DHT.h"
 
 // ================= WIFI =================
-const char* ssid = "「JAITP」";
-const char* password = "MTFKISAS";
+const char* ssid = "Redmi 15 5G";
+const char* password = "ROME2011";
 
 // ================= MQTT =================
 const char* mqtt_server = "broker.emqx.io";
@@ -14,6 +17,8 @@ const int mqtt_port = 1883;
 
 const char* pub_topic = "greenhouse/fern/data";
 const char* sub_topic = "greenhouse/fern/control";
+const char* mode_topic = "greenhouse/fern/mode";
+const char* button_topic = "greenhouse/fern/button";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -23,7 +28,7 @@ PubSubClient client(espClient);
 #define DHTTYPE DHT11
 #define FLAME_PIN 15
 #define BUTTON_PIN 18
-#define PUMP_PIN 27   // MOSFET control
+#define PUMP_PIN 27
 
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -35,19 +40,19 @@ bool flameDetected;
 bool pumpState = false;
 bool lastButtonState = HIGH;
 
-// MODE
 bool autoMode = true;
 
 // BUTTON HOLD
 unsigned long buttonPressStart = 0;
 bool buttonHolding = false;
+bool longPressTriggered = false;
 
 // AUTO CYCLE
 unsigned long pumpTimer = 0;
 bool pumpCycleState = false;
 
 unsigned long lastSend = 0;
-unsigned long lastPrint = 0;   // for slower printing
+unsigned long lastPrint = 0;
 
 // ================= HASH =================
 String generateHash(String data) {
@@ -71,18 +76,36 @@ String generateHash(String data) {
 
 // ================= MQTT CALLBACK =================
 void callback(char* topic, byte* payload, unsigned int length){
-  String msg;
 
+  String msg;
   for(int i=0;i<length;i++)
     msg += (char)payload[i];
 
-  Serial.println("----- RECEIVED COMMAND -----");
-  Serial.print("Message: ");
-  Serial.println(msg);
+  String topicStr = String(topic);
 
-  if (!autoMode) {
-    if(msg=="WATER_ON") pumpState=true;
-    if(msg=="WATER_OFF") pumpState=false;
+  Serial.println("----- RECEIVED -----");
+  Serial.print("Topic: "); Serial.println(topicStr);
+  Serial.print("Message: "); Serial.println(msg);
+
+  // MODE CONTROL
+  if (topicStr == mode_topic) {
+    if (msg == "AUTO") {
+      autoMode = true;
+      Serial.println("Switched to AUTO mode");
+    }
+    else if (msg == "MANUAL") {
+      autoMode = false;
+      Serial.println("Switched to MANUAL mode");
+    }
+    return;
+  }
+
+  // PUMP CONTROL (ONLY IN MANUAL)
+  if (topicStr == sub_topic) {
+    if (!autoMode) {
+      if(msg=="WATER_ON") pumpState=true;
+      if(msg=="WATER_OFF") pumpState=false;
+    }
   }
 }
 
@@ -104,7 +127,10 @@ void reconnectMQTT(){
     Serial.println("Connecting MQTT...");
     if(client.connect("FernPot_ESP32")){
       Serial.println("MQTT Connected!");
+
       client.subscribe(sub_topic);
+      client.subscribe(mode_topic);   // NEW
+
     }else{
       Serial.println("MQTT Failed, retry...");
       delay(2000);
@@ -127,7 +153,7 @@ void readSensors(){
 
   bool buttonState = digitalRead(BUTTON_PIN);
 
-  // ===== LONG PRESS =====
+  // LONG PRESS → CHANGE MODE
   if (buttonState == LOW && lastButtonState == HIGH) {
     buttonPressStart = millis();
     buttonHolding = true;
@@ -135,26 +161,48 @@ void readSensors(){
 
   if (buttonState == LOW && buttonHolding) {
     if (millis() - buttonPressStart > 2000) {
+
       autoMode = !autoMode;
+
+     Serial.println("=== MODE CHANGED ===");
+    Serial.println(autoMode ? "AUTO" : "MANUAL");
+
+      client.publish(mode_topic, autoMode ? "AUTO" : "MANUAL");
+
       buttonHolding = false;
-
-      Serial.println("=== MODE CHANGED ===");
-      Serial.println(autoMode ? "AUTO MODE" : "MANUAL MODE");
+     longPressTriggered = true;   // 🔥 IMPORTANT
     }
   }
 
-  // ===== SHORT PRESS =====
-  if (buttonState == HIGH && lastButtonState == LOW) {
-    if (!autoMode) {
-      pumpState = !pumpState;
-      Serial.println("Manual toggle pump");
-    }
-    buttonHolding = false;
-  }
+// SHORT PRESS → MANUAL CONTROL
+if (buttonState == HIGH && lastButtonState == LOW) {
 
+   // ❌ IGNORE if it was long press
+    if (longPressTriggered) {
+     longPressTriggered = false;
+   } else {
+
+     // SEND BUTTON EVENT TO NODE-RED
+      StaticJsonDocument<64> doc;
+      doc["event"] = "button";
+      doc["action"] = "toggle";
+
+     String msg;
+     serializeJson(doc, msg);
+     client.publish(button_topic, msg.c_str());
+
+     // Only control pump in MANUAL mode
+      if (!autoMode) {
+       pumpState = !pumpState;
+       Serial.println("Manual toggle pump");
+     }
+    }
+
+   buttonHolding = false;
+  }
   lastButtonState = buttonState;
 
-  // ===== PRINT (SLOWER) =====
+  // PRINT
   if (millis() - lastPrint > 2000) {
     lastPrint = millis();
 
@@ -190,13 +238,9 @@ void sendData(){
 
   client.publish(pub_topic, finalMsg.c_str());
 
-  // 🔥 CLEAR PRINT
   Serial.println("===== MQTT SEND =====");
-  Serial.print("Topic: ");
-  Serial.println(pub_topic);
-
-  Serial.print("Payload: ");
-  Serial.println(finalMsg);
+  Serial.print("Topic: "); Serial.println(pub_topic);
+  Serial.print("Payload: "); Serial.println(finalMsg);
   Serial.println("=====================");
 }
 
@@ -234,7 +278,7 @@ void loop(){
 
   readSensors();
 
-  // ===== AUTO MODE =====
+  // AUTO MODE
   if (autoMode) {
 
     unsigned long now = millis();
@@ -253,11 +297,9 @@ void loop(){
     pumpState = pumpCycleState;
   }
 
-  // ===== APPLY OUTPUT =====
   digitalWrite(PUMP_PIN, pumpState);
 
-  // ===== SEND MQTT =====
-  if(millis()-lastSend>5000){
+  if(millis()-lastSend>1000){
     lastSend=millis();
     sendData();
   }
