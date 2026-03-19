@@ -4,7 +4,6 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
-#include "mbedtls/sha256.h"
 #include "DHT.h"
 
 // ================= WIFI =================
@@ -54,24 +53,15 @@ bool pumpCycleState = false;
 unsigned long lastSend = 0;
 unsigned long lastPrint = 0;
 
-// ================= HASH =================
-String generateHash(String data) {
-  byte hash[32];
-  mbedtls_sha256_context ctx;
+// ================= Checksum int =================
+uint16_t generateChecksum(String data) {
+  uint16_t sum = 0;
 
-  mbedtls_sha256_init(&ctx);
-  mbedtls_sha256_starts(&ctx, 0);
-  mbedtls_sha256_update(&ctx,(const unsigned char*)data.c_str(),data.length());
-  mbedtls_sha256_finish(&ctx, hash);
-  mbedtls_sha256_free(&ctx);
-
-  String result="";
-  for(int i=0;i<32;i++){
-    char buf[3];
-    sprintf(buf,"%02x",hash[i]);
-    result+=buf;
+  for (int i = 0; i < data.length(); i++) {
+    sum += (uint8_t)data[i];
   }
-  return result;
+
+  return sum;
 }
 
 // ================= MQTT CALLBACK =================
@@ -218,30 +208,34 @@ if (buttonState == HIGH && lastButtonState == LOW) {
 // ================= SEND DATA =================
 void sendData(){
 
-  StaticJsonDocument<256> finalDoc;
-  JsonObject data = finalDoc.createNestedObject("data");
+  // Create DATA only
+  StaticJsonDocument<192> dataDoc;
 
-  data["temp"] = temperature;
-  data["humidity"] = humidity;
-  data["flame"] = flameDetected;
-  data["led"] = pumpState;
-  data["mode"] = autoMode ? "AUTO" : "MANUAL";
+  dataDoc["temp"] = temperature;
+  dataDoc["humidity"] = humidity;
+  dataDoc["flame"] = flameDetected;
+  dataDoc["led"] = pumpState;
+  dataDoc["mode"] = autoMode ? "AUTO" : "MANUAL";
 
-  String payload;
-  serializeJson(finalDoc, payload);
+  String dataStr;
+  serializeJson(dataDoc, dataStr);
 
-  String hash = generateHash(payload);
-  finalDoc["hash"] = hash;
+  // Generate checksum from DATA ONLY
+  uint16_t checksum = generateChecksum(dataStr);
+
+  // Create FINAL message
+  StaticJsonDocument<384> finalDoc;
+  finalDoc["data"] = dataDoc;
+  finalDoc["checksum"] = checksum;
 
   String finalMsg;
   serializeJson(finalDoc, finalMsg);
 
+  // Send
   client.publish(pub_topic, finalMsg.c_str());
 
   Serial.println("===== MQTT SEND =====");
-  Serial.print("Topic: "); Serial.println(pub_topic);
-  Serial.print("Payload: "); Serial.println(finalMsg);
-  Serial.println("=====================");
+  Serial.println(finalMsg);
 }
 
 // ================= SETUP =================
