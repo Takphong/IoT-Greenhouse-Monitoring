@@ -1,0 +1,603 @@
+[
+    {
+        "id": "9e75b9a2e3c9bc2f",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "9252db3cba6e71e5",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "bbd02403bd437c42",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "broker.emqx.io",
+        "port": 1883,
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "202fe3f91f5fa8ea",
+        "type": "ui_base",
+        "theme": {
+            "name": "theme-light",
+            "lightTheme": {
+                "default": "#0094CE",
+                "baseColor": "#0094CE",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
+                "edited": false
+            },
+            "darkTheme": {
+                "default": "#097479",
+                "baseColor": "#097479",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
+                "edited": false
+            },
+            "customTheme": {
+                "name": "Untitled Theme 1",
+                "default": "#4B7930",
+                "baseColor": "#4B7930",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
+            },
+            "themeState": {
+                "base-color": {
+                    "default": "#0094CE",
+                    "value": "#0094CE",
+                    "edited": false
+                },
+                "page-titlebar-backgroundColor": {
+                    "value": "#0094CE",
+                    "edited": false
+                },
+                "page-backgroundColor": {
+                    "value": "#fafafa",
+                    "edited": false
+                },
+                "page-sidebar-backgroundColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "group-textColor": {
+                    "value": "#1bbfff",
+                    "edited": false
+                },
+                "group-borderColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "group-backgroundColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "widget-textColor": {
+                    "value": "#111111",
+                    "edited": false
+                },
+                "widget-backgroundColor": {
+                    "value": "#0094ce",
+                    "edited": false
+                },
+                "widget-borderColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "base-font": {
+                    "value": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
+                }
+            },
+            "angularTheme": {
+                "primary": "indigo",
+                "accents": "blue",
+                "warn": "red",
+                "background": "grey",
+                "palette": "light"
+            }
+        },
+        "site": {
+            "name": "Node-RED Dashboard",
+            "hideToolbar": "false",
+            "allowSwipe": "false",
+            "lockMenu": "false",
+            "allowTempTheme": "true",
+            "dateFormat": "DD/MM/YYYY",
+            "sizes": {
+                "sx": 48,
+                "sy": 48,
+                "gx": 6,
+                "gy": 6,
+                "cx": 6,
+                "cy": 6,
+                "px": 0,
+                "py": 0
+            }
+        }
+    },
+    {
+        "id": "tab1",
+        "type": "ui_tab",
+        "name": "M5Stack Monitor",
+        "icon": "dashboard"
+    },
+    {
+        "id": "group1",
+        "type": "ui_group",
+        "name": "Environment",
+        "tab": "tab1",
+        "order": 1,
+        "width": "6"
+    },
+    {
+        "id": "e5a1abe4f3c34bac",
+        "type": "MySQLdatabase",
+        "name": "",
+        "host": "127.0.0.1",
+        "port": "3306",
+        "db": "sensor_data",
+        "tz": "",
+        "charset": "UTF8"
+    },
+    {
+        "id": "dcc97c3cce551577",
+        "type": "json",
+        "z": "9252db3cba6e71e5",
+        "name": "Parse JSON",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 430,
+        "y": 340,
+        "wires": [
+            [
+                "562170caeadf6727",
+                "7ad957fb294f821e"
+            ]
+        ]
+    },
+    {
+        "id": "3462eac4ddcff1d4",
+        "type": "csv",
+        "z": "9252db3cba6e71e5",
+        "name": "Convert CSV",
+        "sep": ",",
+        "hdrin": false,
+        "multi": "one",
+        "temp": "temp,humidity,flame,pump",
+        "skip": 0,
+        "strings": true,
+        "include_empty_strings": false,
+        "include_null_values": false,
+        "x": 1110,
+        "y": 640,
+        "wires": [
+            [
+                "96bab85d38ecc272"
+            ]
+        ]
+    },
+    {
+        "id": "96bab85d38ecc272",
+        "type": "file",
+        "z": "9252db3cba6e71e5",
+        "name": "Save CSV",
+        "filename": "/home/ubuntu/data/output.csv",
+        "filenameType": "str",
+        "appendNewline": true,
+        "createDir": true,
+        "overwriteFile": "false",
+        "encoding": "none",
+        "x": 1290,
+        "y": 640,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4bd7462660c55194",
+        "type": "function",
+        "z": "9252db3cba6e71e5",
+        "name": "function 1",
+        "func": "msg.payload = msg.payload.humidity;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1040,
+        "y": 340,
+        "wires": [
+            [
+                "38a887b9d9a55c71"
+            ]
+        ]
+    },
+    {
+        "id": "ecb573208d66b456",
+        "type": "function",
+        "z": "9252db3cba6e71e5",
+        "name": "function 3",
+        "func": "msg.topic = \"INSERT INTO environment (temp, humidity, flame, pump) VALUES (?, ?, ?, ?)\";\n\nlet d = msg.payload.data || msg.payload;\n\nnode.warn(d); // must show\n\nmsg.payload = [\n    d.temp,\n    d.humidity,\n    d.flame ? 1 : 0,\n    d.pump ? 1 : 0\n];\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1020,
+        "y": 700,
+        "wires": [
+            [
+                "525cd14a8bd4e875"
+            ]
+        ]
+    },
+    {
+        "id": "562170caeadf6727",
+        "type": "function",
+        "z": "9252db3cba6e71e5",
+        "name": "function 6",
+        "func": "let d = msg.payload.data;\n\nmsg.payload = {\n    temp: d.temp,\n    humidity: d.humidity,\n    flame: d.flame ? 1 : 0,\n    pump: d.led ? 1 : 0\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 340,
+        "wires": [
+            [
+                "4bd7462660c55194",
+                "ecb573208d66b456",
+                "3462eac4ddcff1d4",
+                "d295954d45656b0b"
+            ]
+        ]
+    },
+    {
+        "id": "a7f0fe9112d7cda2",
+        "type": "mqtt in",
+        "z": "9252db3cba6e71e5",
+        "name": "",
+        "topic": "greenhouse/fern/data",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "bbd02403bd437c42",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 180,
+        "y": 340,
+        "wires": [
+            [
+                "dcc97c3cce551577",
+                "157343b0f104ea9a",
+                "467e9ba16e99caea"
+            ]
+        ]
+    },
+    {
+        "id": "8f854cca7d2ad8a2",
+        "type": "mqtt out",
+        "z": "9252db3cba6e71e5",
+        "name": "",
+        "topic": "greenhouse/fern/control",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "bbd02403bd437c42",
+        "x": 630,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "d295954d45656b0b",
+        "type": "function",
+        "z": "9252db3cba6e71e5",
+        "name": "function 2",
+        "func": "msg.payload = msg.payload.temp;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1040,
+        "y": 280,
+        "wires": [
+            [
+                "a208fc1a45840c4d"
+            ]
+        ]
+    },
+    {
+        "id": "b32c9827909fe049",
+        "type": "mqtt out",
+        "z": "9252db3cba6e71e5",
+        "name": "",
+        "topic": "greenhouse/fern/mode",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "bbd02403bd437c42",
+        "x": 640,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "63ddae39ebc51357",
+        "type": "mqtt in",
+        "z": "9252db3cba6e71e5",
+        "name": "",
+        "topic": "greenhouse/fern/button",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "bbd02403bd437c42",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 180,
+        "y": 620,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e563bb6480163550",
+        "type": "debug",
+        "z": "9252db3cba6e71e5",
+        "name": "button debug",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 410,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "7ad957fb294f821e",
+        "type": "function",
+        "z": "9252db3cba6e71e5",
+        "name": "function 4",
+        "func": "let d = msg.payload.data || msg.payload;\n\nmsg.payload = d.mode;  // \"AUTO\" or \"MANUAL\"\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 460,
+        "wires": [
+            [
+                "e563bb6480163550",
+                "aaabf8d58a2a2249"
+            ]
+        ]
+    },
+    {
+        "id": "157343b0f104ea9a",
+        "type": "debug",
+        "z": "9252db3cba6e71e5",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 460,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "467e9ba16e99caea",
+        "type": "function",
+        "z": "9252db3cba6e71e5",
+        "name": "function 7",
+        "func": "// Extract parts\nlet receivedChecksum = msg.payload.checksum;\nlet dataObj = msg.payload.data;\n\n// Convert data back to string (same as ESP)\nlet dataStr = JSON.stringify(dataObj);\n\n// Generate checksum (same logic as ESP32)\nlet sum = 0;\nfor (let i = 0; i < dataStr.length; i++) {\n    sum += dataStr.charCodeAt(i);\n}\nsum = sum & 0xFFFF; // keep it 16-bit\n\n// Compare\nif (sum !== receivedChecksum) {\n    node.warn(\"❌ CHECKSUM FAILED\");\n    return null; // DROP message\n}\n\n// ✅ Passed\nnode.warn(\"✅ CHECKSUM OK\");\n\n// Replace payload with clean data\nmsg.payload = dataObj;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "2e34e3d914abda4b",
+        "type": "ui_switch",
+        "z": "9252db3cba6e71e5",
+        "name": "",
+        "label": "on off pump",
+        "tooltip": "",
+        "group": "group1",
+        "order": 4,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "decouple": "false",
+        "topic": "topic",
+        "topicType": "msg",
+        "style": "",
+        "onvalue": "WATER_ON",
+        "onvalueType": "str",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "WATER_OFF",
+        "offvalueType": "str",
+        "officon": "",
+        "offcolor": "",
+        "animate": false,
+        "className": "",
+        "x": 410,
+        "y": 540,
+        "wires": [
+            [
+                "8f854cca7d2ad8a2"
+            ]
+        ]
+    },
+    {
+        "id": "aaabf8d58a2a2249",
+        "type": "ui_switch",
+        "z": "9252db3cba6e71e5",
+        "name": "auto mode",
+        "label": "auto mode",
+        "tooltip": "",
+        "group": "group1",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "decouple": "false",
+        "topic": "topic",
+        "topicType": "msg",
+        "style": "",
+        "onvalue": "AUTO",
+        "onvalueType": "str",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "MANUAL",
+        "offvalueType": "str",
+        "officon": "",
+        "offcolor": "",
+        "animate": false,
+        "className": "",
+        "x": 410,
+        "y": 620,
+        "wires": [
+            [
+                "b32c9827909fe049"
+            ]
+        ]
+    },
+    {
+        "id": "a208fc1a45840c4d",
+        "type": "ui_gauge",
+        "z": "9252db3cba6e71e5",
+        "name": "Temp",
+        "group": "group1",
+        "order": 1,
+        "width": 6,
+        "height": 4,
+        "gtype": "gage",
+        "title": "Temp",
+        "label": "°C",
+        "format": "{{value}}",
+        "min": "15",
+        "max": "50",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "diff": false,
+        "className": "",
+        "x": 1190,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "525cd14a8bd4e875",
+        "type": "mysql",
+        "z": "9252db3cba6e71e5",
+        "mydb": "e5a1abe4f3c34bac",
+        "name": "",
+        "x": 1280,
+        "y": 740,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "38a887b9d9a55c71",
+        "type": "ui_gauge",
+        "z": "9252db3cba6e71e5",
+        "name": "Humidity",
+        "group": "group1",
+        "order": 1,
+        "width": 6,
+        "height": 4,
+        "gtype": "gage",
+        "title": "Humidity",
+        "label": "%",
+        "format": "{{value}}",
+        "min": "30",
+        "max": "71",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "diff": false,
+        "className": "",
+        "x": 1200,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "957eba94b2dd26a9",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-dashboard": "3.6.6",
+            "node-red-node-mysql": "3.0.0"
+        }
+    }
+]
