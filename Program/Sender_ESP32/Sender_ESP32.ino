@@ -27,7 +27,9 @@ PubSubClient client(espClient);
 #define DHTTYPE DHT11
 #define FLAME_PIN 15
 #define BUTTON_PIN 18
-#define PUMP_PIN 27
+#define PUMP_PIN 17
+#define LED_ON_PIN 25
+#define LED_OFF_PIN 26
 
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -52,6 +54,12 @@ bool pumpCycleState = false;
 
 unsigned long lastSend = 0;
 unsigned long lastPrint = 0;
+
+unsigned long lastButtonTime = 0;
+const unsigned long debounceDelay = 150;
+
+float lastTemperature = 0;
+float lastHumidity = 0;
 
 // ================= Checksum int =================
 uint16_t generateChecksum(String data) {
@@ -131,20 +139,45 @@ void reconnectMQTT(){
 // ================= READ SENSORS =================
 void readSensors(){
 
-  temperature = dht.readTemperature();
-  humidity = dht.readHumidity();
+  float newTemp = dht.readTemperature();
+  float newHum = dht.readHumidity();
 
-  if (isnan(temperature) || isnan(humidity)) {
-    Serial.println("DHT FAILED!");
-    return;
+  bool dhtFail = false;
+
+  if (isnan(newTemp) || isnan(newHum)) {
+    dhtFail = true;
+
+    //  keep old values
+    temperature = lastTemperature;
+    humidity = lastHumidity;
+
+  } else {
+
+    // update values
+    temperature = newTemp;
+    humidity = newHum;
+
+    lastTemperature = newTemp;
+    lastHumidity = newHum;
   }
 
-  flameDetected = digitalRead(FLAME_PIN) == LOW;
+  if (temperature >= 50) {
+    flameDetected = true;
+  } else {
+    flameDetected = false;
+  }
 
   bool buttonState = digitalRead(BUTTON_PIN);
 
+  // debounce protection
+  if (millis() - lastButtonTime < debounceDelay) {
+   lastButtonState = buttonState;
+   return;
+  }
+
   // LONG PRESS → CHANGE MODE
   if (buttonState == LOW && lastButtonState == HIGH) {
+    lastButtonTime = millis();
     buttonPressStart = millis();
     buttonHolding = true;
   }
@@ -197,8 +230,13 @@ if (buttonState == HIGH && lastButtonState == LOW) {
     lastPrint = millis();
 
     Serial.println("----- SENSOR READ -----");
-    Serial.print("Temperature: "); Serial.println(temperature);
-    Serial.print("Humidity: "); Serial.println(humidity);
+    Serial.print("Temperature: ");
+    if(dhtFail) Serial.println("DHT FAIL");
+    else Serial.println(temperature);
+
+    Serial.print("Humidity: ");
+    if(dhtFail) Serial.println("DHT FAIL");
+    else Serial.println(humidity);
     Serial.print("Flame: "); Serial.println(flameDetected ? "YES" : "NO");
     Serial.print("Mode: "); Serial.println(autoMode ? "AUTO" : "MANUAL");
     Serial.print("Pump: "); Serial.println(pumpState ? "ON" : "OFF");
@@ -247,6 +285,12 @@ void setup(){
   pinMode(FLAME_PIN,INPUT);
   pinMode(BUTTON_PIN,INPUT_PULLUP);
 
+  // Force DAC pins to digital mode
+  pinMode(LED_ON_PIN, OUTPUT);
+  pinMode(LED_OFF_PIN, OUTPUT);
+  dacWrite(LED_ON_PIN, 0);  // Reset DAC
+  dacWrite(LED_OFF_PIN, 0); // Reset DAC
+
   digitalWrite(PUMP_PIN, LOW);
 
   dht.begin();
@@ -282,7 +326,7 @@ void loop(){
       pumpTimer = now;
       Serial.println("AUTO: Pump ON");
     }
-    else if (pumpCycleState && now - pumpTimer > 5000) {
+    else if (pumpCycleState && now - pumpTimer > 15000) {
       pumpCycleState = false;
       pumpTimer = now;
       Serial.println("AUTO: Pump OFF");
@@ -291,9 +335,12 @@ void loop(){
     pumpState = pumpCycleState;
   }
 
-  digitalWrite(PUMP_PIN, pumpState);
+  digitalWrite(LED_ON_PIN, pumpState);
+  digitalWrite(LED_OFF_PIN, !pumpState);
+  digitalWrite(PUMP_PIN, pumpState ? LOW : HIGH);
+  delay(500);
 
-  if(millis()-lastSend>1000){
+  if(millis()-lastSend>2000){
     lastSend=millis();
     sendData();
   }
