@@ -32,12 +32,16 @@ float humidity = 0;
 bool flame = false;
 bool pump = false;
 
+bool checksumOK = false;
+uint16_t receivedChecksum = 0;
+uint16_t calculatedChecksum = 0;
+
 // ===== IMU =====
 float roll = 0;
 float pitch = 0;
 float yaw = 0;
 
-// ✅ CLEAN MODE
+// CLEAN MODE
 String systemMode = "AUTO";
 
 int screenMode = 0;
@@ -103,12 +107,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
      return;
     }
 
-    uint16_t receivedChecksum = doc["checksum"];
+    receivedChecksum = doc["checksum"];
 
     String dataStr;
     serializeJson(doc["data"], dataStr);
 
-    uint16_t calculatedChecksum = generateChecksum(dataStr);
+    calculatedChecksum = generateChecksum(dataStr);
 
     if (receivedChecksum != calculatedChecksum) {
       Serial.println("❌ CHECKSUM FAILED!");
@@ -119,9 +123,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
      Serial.print("Calculated: ");
      Serial.println(calculatedChecksum);
 
+     checksumOK = false;
+
      return;
     } else {
      Serial.println("✅ CHECKSUM OK");
+     checksumOK = true;
     }
 
     JsonObject data = doc["data"];
@@ -241,6 +248,18 @@ void displayScreen() {
 
     M5.Lcd.setTextColor(CYAN);
     M5.Lcd.printf("Pump: %s\n", pump ? "ON" : "OFF");
+
+    if (checksumOK) {
+    M5.Lcd.setTextColor(GREEN);
+    M5.Lcd.println("Checksum: OK");
+  } else {
+    M5.Lcd.setTextColor(RED);
+    M5.Lcd.println("Checksum: FAIL");
+  }
+
+  M5.Lcd.setTextColor(WHITE);
+  M5.Lcd.printf("RX: %u\n", receivedChecksum);
+  M5.Lcd.printf("CAL: %u\n", calculatedChecksum);
   }
 }
 
